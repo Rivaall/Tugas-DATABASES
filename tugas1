@@ -1,0 +1,41 @@
+MariaDB [dbpos]> create table produk(
+    -> id int not null auto_increment primary key,
+    -> kode varchar(10) unique,
+    -> nama varchar(45),
+    -> harga_beli double,
+    -> harga_jual double,
+    -> stok int(11),
+    -> min_stok int(11),
+    -> jenis_produk_id int not null,
+    -> foreign key (jenis_produk_id) references jenis_produk(id));
+Query OK, 0 rows affected (0.065 sec)
+
+MariaDB [dbpos]> create table vendor(
+    -> id int not null auto_increment primary key,
+    -> nomor varchar(4),
+    -> nama varchar(40),
+    -> kota varchar(30),
+    -> kontak varchar(30));
+Query OK, 0 rows affected (0.019 sec)
+
+MariaDB [dbpos]> create table pembelian(
+    -> id int not null auto_increment primary key,
+    -> tanggal varchar(45),
+    -> nomor varchar(10),
+    -> produk_id int not null,
+    -> jumlah int(11),
+    -> harga double,
+    -> vendor_id int not null,
+    -> foreign key (produk_id) references produk(id),
+    -> foreign key (vendor_id) references vendor(id));
+Query OK, 0 rows affected (0.059 sec)
+
+MariaDB [dbpos]> create table pesanan_items(
+    -> id int not null auto_increment primary key,
+    -> produk_id int not null,
+    -> pesanan_id int not null,
+    -> qty int(11),
+    -> harga double,
+    -> foreign key (produk_id) references produk(id),
+    -> foreign key (pesanan_id) references pesanan(id));
+Query OK, 0 rows affected (0.055 sec)
