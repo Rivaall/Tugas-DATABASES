@@ -1,0 +1,98 @@
+SOAL 5.1
+
+Tabel 2
+
+MariaDB [dbkoperasi]> CREATE VIEW pembelian_produk_vendor AS SELECT
+    -> pembelian.id,
+    -> pembelian.tanggal,
+    -> pembelian.nomor,
+    -> pembelian.jumlah,
+    -> pembelian.harga,
+    -> produk.nama AS nama_produk,
+    -> vendor.nama AS nama_vendor,
+    -> vendor.kontak
+    -> FROM pembelian INNER JOIN produk ON pembelian.produk_id = produk.id
+    -> INNER JOIN vendor ON pembelian.vendor_id = vendor.id;
+Query OK, 0 rows affected (0.014 sec)
+
+MariaDB [dbkoperasi]> SELECT * FROM pembelian_produk_vendor;
++----+------------+-------+--------+---------+------------------+----------------------+-----------------+
+| id | tanggal    | nomor | jumlah | harga   | nama_produk      | nama_vendor          | kontak          |
++----+------------+-------+--------+---------+------------------+----------------------+-----------------+
+|  1 | 2019-10-10 | P001  |      2 | 3500000 | Televisi 21 inch | PT Guna Samudra      | Ali Nurdin      |
+|  2 | 2019-11-20 | P002  |      5 | 5500000 | Televisi 40 inch | PT Pondok C9         | Putri Ramadhani |
+|  3 | 2019-12-12 | P003  |      5 | 5400000 | Televisi 40 inch | PT Guna Samudra      | Ali Nurdin      |
+|  4 | 2020-01-20 | P004  |    200 |    1800 | Teh Botol        | CV Jaya Raya Semesta | Dwi Rahayu      |
+|  5 | 2020-01-20 | P005  |    100 |    2300 | Teh Kotak        | CV Jaya Raya Semesta | Dwi Rahayu      |
++----+------------+-------+--------+---------+------------------+----------------------+-----------------+
+5 rows in set (0.004 sec)
+
+
+Tabel 3
+
+MariaDB [dbkoperasi]> CREATE VIEW pesanan_lengkap AS SELECT
+    -> p.id AS id_pesanan,
+    -> p.tanggal,
+    -> p.total,
+    -> pl.nama AS nama_pelanggan,
+    -> pr.kode AS kode_produk,
+    -> pr.nama AS nama_produk,
+    -> jp.nama AS nama_jenis_produk,
+    -> pi.qty,
+    -> pi.harga
+    -> FROM pesanan p INNER JOIN pelanggan pl ON p.pelanggan_id = pl.id
+    -> INNER JOIN pesanan_items pi ON p.id = pi.pesanan_id
+    -> INNER JOIN produk pr ON pi.produk_id = pr.id
+    -> INNER JOIN jenis_produk jp ON pr.jenis_produk_id = jp.id;
+Query OK, 0 rows affected (0.008 sec)
+
+MariaDB [dbkoperasi]> SELECT * FROM pesanan_lengkap;
++------------+------------+---------+----------------+-------------+------------------+-------------------+------+---------+
+| id_pesanan | tanggal    | total   | nama_pelanggan | kode_produk | nama_produk      | nama_jenis_produk | qty  | harga   |
++------------+------------+---------+----------------+-------------+------------------+-------------------+------+---------+
+|          1 | 2015-11-04 | 9720000 | Agung Sedayu   | TV01        | Televisi 21 inch | elektronik        |    1 | 5040000 |
+|          1 | 2015-11-04 | 9720000 | Agung Sedayu   | K001        | Kulkas 2 pintu   | elektronik        |    1 | 4680000 |
+|          3 | 2015-11-04 |       0 | Gayatri Dwi    | TV01        | Televisi 21 inch | elektronik        |    1 | 5040000 |
+|          2 | 2015-11-04 |   17500 | Sekar Mirah    | TK01        | Teh Kotak        | minuman           |    5 |    3500 |
+|          3 | 2015-11-04 |       0 | Gayatri Dwi    | TK01        | Teh Kotak        | minuman           |   10 |    3500 |
+|          5 | 2015-11-04 |       0 | Cassanndra     | TK01        | Teh Kotak        | minuman           |   10 |    3500 |
+|          6 | 2015-11-04 |       0 | Pandan Wangi   | TK01        | Teh Kotak        | minuman           |   20 |    3500 |
++------------+------------+---------+----------------+-------------+------------------+-------------------+------+---------+
+7 rows in set (0.004 sec)
+
+
+
+
+SOAL 5.2
+
+MariaDB [dbkoperasi]> START TRANSACTION;
+Query OK, 0 rows affected (0.001 sec)
+
+MariaDB [dbkoperasi]> INSERT INTO produk (kode,nama,harga_beli,harga_jual,stok,min_stok,jenis_produk_id) VALUES
+    -> ('B001', 'Pulpen Pilot', 5000, 7500, 100, 10, 1),
+    -> ('B002', 'Buku Tulis A5', 3000, 5000, 200, 20, 1),
+    -> ('E003', 'Mouse Wireless', 80000, 120000, 50, 5, 2);
+Query OK, 3 rows affected (0.010 sec)
+Records: 3  Duplicates: 0  Warnings: 0
+
+MariaDB [dbkoperasi]> UPDATE produk SET
+    -> stok = stok - 10 WHERE kode = 'B001';
+Query OK, 1 row affected (0.002 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+MariaDB [dbkoperasi]> SAVEPOINT sebelum_hapus_pembayaran;
+Query OK, 0 rows affected (0.001 sec)
+
+MariaDB [dbkoperasi]> DELETE FROM pembayaran WHERE id = 5;
+Query OK, 0 rows affected (0.011 sec)
+
+MariaDB [dbkoperasi]> ROLLBACK TO sebelum_hapus_pembayaran;
+Query OK, 0 rows affected (0.001 sec)
+
+MariaDB [dbkoperasi]> UPDATE kartu SET
+    -> iuran = 50000 WHERE id = 2;
+Query OK, 1 row affected (0.002 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+MariaDB [dbkoperasi]> COMMIT;
+Query OK, 0 rows affected (0.009 sec)
