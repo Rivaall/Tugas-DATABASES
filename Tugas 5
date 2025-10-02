@@ -1,0 +1,188 @@
+SOAL 6.1
+
+2. MEMBUAT UMUR
+
+MariaDB [dbkoperasi]> DELIMITER $$
+MariaDB [dbkoperasi]> CREATE FUNCTION umur(tgl_lahir DATE)
+    -> RETURNS INT
+    -> BEGIN
+    -> DECLARE umur INT;
+    -> SET umur = YEAR(CURDATE()) - YEAR(tgl_lahir);
+    -> RETURN umur;
+    -> END $$
+Query OK, 0 rows affected (0.022 sec)
+
+MariaDB [dbkoperasi]> SELECT nama, jk, tmp_lahir, tgl_lahir, umur(tgl_lahir) AS umur FROM pelanggan;
++---------------+------+------------+------------+------+
+| nama          | jk   | tmp_lahir  | tgl_lahir  | umur |
++---------------+------+------------+------------+------+
+| Agung Sedayu  | L    | Solo       | 2010-01-01 |   15 |
+| Pandan Wangi  | P    | Yogyakarta | 1950-01-01 |   75 |
+| Sekar Mirah   | P    | Kediri     | 1983-02-20 |   42 |
+| Swandaru Geni | L    | Kediri     | 1981-01-04 |   44 |
+| Pradabashu    | L    | Pati       | 1985-04-02 |   40 |
+| Gayatri Dwi   | P    | Jakarta    | 1987-11-28 |   38 |
+| Dewi Gyat     | P    | Jakarta    | 1988-12-01 |   37 |
+| Andre Haru    | L    | Surabaya   | 1990-07-15 |   35 |
+| Ahmad Hasan   | L    | Surabaya   | 1992-10-15 |   33 |
+| Cassanndra    | P    | Belfast    | 1990-11-20 |   35 |
++---------------+------+------------+------------+------+
+10 rows in set (0.002 sec)
+
+
+
+
+
+3. Membuat fungsi kategori_harga
+
+MariaDB [dbkoperasi]> DELIMITER ;
+MariaDB [dbkoperasi]> DELIMITER $$
+MariaDB [dbkoperasi]> DROP FUNCTION IF EXISTS kategori_harga;
+    -> CREATE FUNCTION kategori_harga(harga_input DOUBLE)
+    -> RETURNS VARCHAR(20)
+    -> DETERMINISTIC
+    -> BEGIN
+    -> DECLARE kategori VARCHAR(20);
+    -> IF harga_input <= 500000 THEN SET kategori = 'murah';
+    -> ELSEIF harga_input <= 3000000 THEN SET kategori = 'sedang';
+    -> ELSEIF harga_input <= 10000000 THEN SET kategori = 'mahal';
+    -> ELSE SET kategori = 'sangat mahal';
+    -> END IF;
+    -> RETURN kategori;
+    -> END $$
+
+MariaDB [dbkoperasi]> SELECT nama, harga_jual, kategori_harga(harga_jual) AS kategori FROM produk;
++------------------+-------------------+--------------+
+| nama             | harga_jual        | kategori     |
++------------------+-------------------+--------------+
+| Televisi 21 inch |    5956181.876736 | mahal        |
+| Televisi 40 inch |    8792458.960896 | mahal        |
+| Kulkas 2 pintu   |    5530740.314112 | mahal        |
+| Meja Makan       |            600000 | sedang       |
+| Teh Kotak        |              3500 | murah        |
+| PC Desktop HP    |           9600000 | mahal        |
+| Teh Botol        |              2500 | murah        |
+| Notebook Acer    |          10800000 | sangat mahal |
+| Notebook Lenovo  |          12000000 | sangat mahal |
+| Laptop HP        |          13000000 | sangat mahal |
+| Pulpen Pilot     |       8863.365888 | murah        |
+| Buku Tulis A5    | 5908.910591999999 | murah        |
+| Mouse Wireless   |            120000 | murah        |
++------------------+-------------------+--------------+
+13 rows in set (0.001 sec)
+
+
+
+
+
+SOAL 6.2
+
+
+1. 
+
+MariaDB [dbkoperasi]> DELIMITER $$
+MariaDB [dbkoperasi]> DROP TRIGGER IF EXISTS cek_pembayaran;
+    -> CREATE TRIGGER cek_pembayaran BEFORE INSERT ON pembayaran
+    -> FOR EACH ROW
+    -> BEGIN
+    -> DECLARE total_bayar_sebelum DECIMAL(10, 2);
+    -> DECLARE total_pesanan DECIMAL(10, 2);
+    -> SELECT SUM(jumlah) INTO total_bayar_sebelum FROM pembayaran
+    -> WHERE pesanan_id = NEW.pesanan_id;
+    -> SELECT total INTO total_pesanan FROM pesanan
+    -> WHERE id = NEW.pesanan_id;
+    -> IF total_bayar_sebelum + NEW.jumlah >= total_pesanan THEN
+    -> SET NEW.status_pembayaran = 'Lunas';
+    -> ELSE
+    -> SET NEW.status_pembayaran = 'Belum Lunas';
+    -> END IF;
+    -> END $$
+Query OK, 0 rows affected, 1 warning (0.001 sec)
+
+Query OK, 0 rows affected (0.014 sec)
+
+MariaDB [dbkoperasi]> SELECT * from pembayaran;
++----+------------+------------+--------+------+------------+-------------------+
+| id | nokuitansi | tanggal    | jumlah | ke   | pesanan_id | status_pembayaran |
++----+------------+------------+--------+------+------------+-------------------+
+|  1 | NULL       | 2025-10-02 | 500000 |    1 |          1 | Belum Lunas       |
++----+------------+------------+--------+------+------------+-------------------+
+1 row in set (0.001 sec)
+
+
+
+
+
+2.Stored Procedure dengan nama kurangi_stok 
+
+
+MariaDB [dbkoperasi]> DELIMITER $$
+MariaDB [dbkoperasi]> CREATE PROCEDURE kurangi_stok(IN produk_id_arg INT, IN jumlah_pesanan_arg INT)
+    -> BEGIN
+    -> UPDATE produk SET stok = stok - jumlah_pesanan_arg WHERE id = produk_id_arg;
+    -> END $$
+Query OK, 0 rows affected (0.022 sec)
+
+MariaDB [dbkoperasi]> DELIMITER ;
+MariaDB [dbkoperasi]> CALL kurangi_stok(1, 5);
+Query OK, 1 row affected (0.010 sec)
+
+MariaDB [dbkoperasi]> select * from produk;
++----+------+------------------+------------+-------------------+------+----------+-----------------+
+| id | kode | nama             | harga_beli | harga_jual        | stok | min_stok | jenis_produk_id |
++----+------+------------------+------------+-------------------+------+----------+-----------------+
+|  1 | TV01 | Televisi 21 inch |    3500000 |    5956181.876736 |    0 |        2 |               1 |
+|  2 | TV02 | Televisi 40 inch |    5500000 |    8792458.960896 |    4 |        2 |               1 |
+|  3 | K001 | Kulkas 2 pintu   |    3500000 |    5530740.314112 |    6 |        2 |               1 |
+|  4 | M001 | Meja Makan       |     500000 |            600000 |    4 |        3 |               2 |
+|  5 | TK01 | Teh Kotak        |       3000 |              3500 |    6 |       10 |               4 |
+|  6 | PC01 | PC Desktop HP    |    7000000 |           9600000 |    9 |        2 |               5 |
+|  7 | TB01 | Teh Botol        |       2000 |              2500 |   53 |       10 |               4 |
+|  8 | AC01 | Notebook Acer    |    8000000 |          10800000 |    7 |        2 |               5 |
+|  9 | LN01 | Notebook Lenovo  |    9000000 |          12000000 |    9 |        2 |               5 |
+| 10 | L004 | Laptop HP        |   12000000 |          13000000 |   20 |        5 |               5 |
+| 11 | B001 | Pulpen Pilot     |       5000 |       8863.365888 |   90 |       10 |               1 |
+| 12 | B002 | Buku Tulis A5    |       3000 | 5908.910591999999 |  200 |       20 |               1 |
+| 13 | E003 | Mouse Wireless   |      80000 |            120000 |   50 |        5 |               2 |
++----+------+------------------+------------+-------------------+------+----------+-----------------+
+13 rows in set (0.002 sec)
+
+
+
+
+3. Trigger dengan nama trig_kurangi_stok 
+
+MariaDB [dbkoperasi]> DELIMITER $$
+MariaDB [dbkoperasi]> DROP TRIGGER IF EXISTS trig_kurangi_stok;
+    -> CREATE TRIGGER trig_kurangi_stok AFTER INSERT ON pesanan_items FOR EACH ROW
+    -> BEGIN
+    -> CALL kurangi_stok(NEW.produk_id, NEW.qty);
+    -> END $$
+Query OK, 0 rows affected, 1 warning (0.001 sec)
+
+Query OK, 0 rows affected (0.029 sec)
+
+MariaDB [dbkoperasi]> DELIMITER ;
+
+MariaDB [dbkoperasi]> INSERT INTO pesanan_items (produk_id, pesanan_id, qty, harga) VALUES (1, 5, 10, 150000);
+Query OK, 1 row affected (0.013 sec)
+
+MariaDB [dbkoperasi]> SELECT * FROM produk;
++----+------+------------------+------------+-------------------+------+----------+-----------------+
+| id | kode | nama             | harga_beli | harga_jual        | stok | min_stok | jenis_produk_id |
++----+------+------------------+------------+-------------------+------+----------+-----------------+
+|  1 | TV01 | Televisi 21 inch |    3500000 |    5956181.876736 |  -10 |        2 |               1 |
+|  2 | TV02 | Televisi 40 inch |    5500000 |    8792458.960896 |    4 |        2 |               1 |
+|  3 | K001 | Kulkas 2 pintu   |    3500000 |    5530740.314112 |    6 |        2 |               1 |
+|  4 | M001 | Meja Makan       |     500000 |            600000 |    4 |        3 |               2 |
+|  5 | TK01 | Teh Kotak        |       3000 |              3500 |    6 |       10 |               4 |
+|  6 | PC01 | PC Desktop HP    |    7000000 |           9600000 |    9 |        2 |               5 |
+|  7 | TB01 | Teh Botol        |       2000 |              2500 |   53 |       10 |               4 |
+|  8 | AC01 | Notebook Acer    |    8000000 |          10800000 |    7 |        2 |               5 |
+|  9 | LN01 | Notebook Lenovo  |    9000000 |          12000000 |    9 |        2 |               5 |
+| 10 | L004 | Laptop HP        |   12000000 |          13000000 |   20 |        5 |               5 |
+| 11 | B001 | Pulpen Pilot     |       5000 |       8863.365888 |   90 |       10 |               1 |
+| 12 | B002 | Buku Tulis A5    |       3000 | 5908.910591999999 |  200 |       20 |               1 |
+| 13 | E003 | Mouse Wireless   |      80000 |            120000 |   50 |        5 |               2 |
++----+------+------------------+------------+-------------------+------+----------+-----------------+
+13 rows in set (0.001 sec)
